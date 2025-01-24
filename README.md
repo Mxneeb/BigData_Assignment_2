@@ -1,6 +1,3 @@
-Here’s the markdown file content for your project:
-
-```markdown
 # Hadoop-Based Search Engine
 
 ## Overview
