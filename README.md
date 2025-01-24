@@ -1,134 +1,111 @@
-# Hadoop-Based Search Engine
+# Search Engine Implimentation using Hadoop MapReduce with Python
 
-## Overview
-
-This project implements a search engine powered by a Hadoop-based backend, designed to handle large datasets efficiently using MapReduce. The search engine preprocesses a dataset, indexes data, and assigns unique IDs to words, enabling optimized searches. The backend processes the data in a distributed manner using Hadoop's MapReduce framework, while Python is used for the initial data cleaning and preparation.
+A **Search Engine** utilizing **Apache Hadoop MapReduce Technology** on a dataset in **comma-separated values (CSV)** format containing around 5 million Wikipedia articles provided by Wikimedia.
 
 ## Dataset
 
-The dataset contains articles with the following relevant fields:
-- **SECTION_TEXT**: The content of each article.
-- **ARTICLE_ID**: A unique identifier for each article.
+Download:  
+[Wikipedia Dataset](https://drive.google.com/file/d/1lGVGqzF5CNWaoV-zoz8_mlThvHwMgcsP/view)
 
-For indexing, the dataset is preprocessed to retain only these fields, ensuring that the search engine focuses on the most important information for indexing and search queries.
+## Dependencies
 
-## Methodology
+The following libraries are required for the preprocessing of this data and to create a sample dataset:
 
-### 1. Data Preprocessing
+- `pandas`
+- `nltk`
+- `string`
+- `time`
+- `tqdm`
+- `numpy`
+- `os`
+- `tempfile`
+- `nltk.corpus` (stopwords)
+- `nltk.tokenize` (word_tokenize)
 
-Data preprocessing is performed using Python (Jupyter Notebook). Key steps include:
-- **Stop Word Removal**: Common words are removed to minimize noise in the data.
-- **Duplicate Removal**: Duplicates are eliminated to maintain unique entries.
-- **Punctuation and Special Character Removal**: Text is standardized for consistency.
-- **Handling Missing Values**: Rows with missing data are dropped.
-- **Column Filtering**: Only `SECTION_TEXT` and `ARTICLE_ID` are retained for further processing.
-- **Text Formatting**:
-  - A dictionary of all sentences is created.
-  - A vocabulary of unique words is built.
-  - Each word is assigned a unique identifier for indexing.
+To install the necessary libraries, use the following:
 
-The preprocessing logic is available in the [DataCleaner.ipynb](./DataCleaner.ipynb) file.
-
-### 2. Hadoop MapReduce Implementation
-
-The MapReduce pipeline consists of two main components: the **Mapper** and the **Reducer**.
-
-#### Mapper
-The mapper processes the preprocessed dataset line by line and outputs the cleaned sentences. The mapper is implemented in [mapper.py](./mapper.py).
-
-```python
-#!/usr/bin/env python3
-import sys
-
-for line in sys.stdin:
-    var = line.strip()  
-    print(var)
+```bash
+pip install pandas nltk tqdm numpy
 ```
 
-#### Reducer
-The reducer processes the output of the mapper. It:
-- Creates a dictionary of sentences.
-- Builds a vocabulary of unique words.
-- Assigns unique IDs to each word.
+## Preprocessing Data
 
-The reducer logic is implemented in [reducer.py](./reducer.py).
+The preprocessing of data is done as follows:
 
-```python
-#!/usr/bin/env python3
-import sys
+1. **Loading and Selecting Relevant Columns**:  
+   The dataset is loaded, and only relevant columns are selected for processing.
 
-# Defining a dictionary to save sentences
-MyDICT = {}
-TempUserID_ = 0
+2. **Text Cleaning**:  
+   The text is converted to lowercase, tokenized, and stopwords, punctuation, and special characters are removed while ensuring no empty strings remain.
 
-# Running loop to process the dataset
-for line in sys.stdin:
-    MyDICT[TempUserID_] = line.strip()
-    TempUserID_ += 1
+3. **Chunking**:  
+   The dataset is divided into manageable chunks, which are processed separately and saved temporarily.
 
-# Creating a vocabulary of unique words
-WORD_ARRAY = set()
+4. **Merging Chunks**:  
+   Once all chunks are processed, they are merged into a single dataset for further operations.
 
-for Sentence in MyDICT.values():
-    WORD_ARRAY.update(Sentence.split())
+5. **Efficiency**:  
+   The process is optimized for memory and time efficiency. The total preprocessing time is tracked and printed at the end.
 
-# Sorting and assigning unique IDs to words
-WORD_ARRAY = sorted(list(WORD_ARRAY))
-i_WORD_ARRAY = list(enumerate(WORD_ARRAY))
-```
+6. **Temporary File Cleanup**:  
+   Temporary files created during processing are cleaned up at the end to save space.
 
-### Workflow
+This systematic approach is essential for handling large datasets efficiently, especially when generating reports.
 
-The workflow of the project is as follows:
+## Create Sample Dataset
 
-1. **Preprocessing**:
-   - Clean and format the dataset.
-   - Generate sanitized data for input to the MapReduce job.
+The code processes the CSV file containing textual data, performing the following operations:
+- Identifying and removing duplicates
+- Concatenating text by groups
+- Exporting the results, optimizing data for report generation.
 
-2. **MapReduce Pipeline**:
-   - **Mapper**: Processes the input sentences line by line.
-   - **Reducer**: Builds a dictionary of sentences, creates a vocabulary, and assigns unique IDs to words.
+## Indexing
 
-3. **Output**:
-   - Indexed vocabulary of unique words.
-   - Word-to-ID mappings for optimized searching.
+The indexing process includes the following steps:
 
-### Execution
+1. **Vocabulary Creation**:  
+   Create a vocabulary using the code in the `vocab` folder, which follows the map-reduce paradigm.
 
-To run this project, follow the steps below:
+2. **Term Frequency (TF)**:  
+   The `tf` folder contains Python files that calculate Term Frequency for each word in the articles using MapReduce.
 
-1. **Preprocess the Dataset**:
-   - Use the `DataCleaner.ipynb` notebook to clean and prepare the dataset. Ensure the dataset is in the appropriate format with `SECTION_TEXT` and `ARTICLE_ID` fields.
+3. **Document Frequency (DF)**:  
+   The `df` folder uses a map-reduce process to generate the Document Frequency for the dataset.
 
-2. **Run the Mapper**:
-   - Execute the `mapper.py` script to process the cleaned sentences from the preprocessed dataset.
+4. **Inverse Document Frequency (IDF)**:  
+   The `score` folder contains the code to calculate the Inverse Document Frequency (IDF) scores for each article, utilizing the output from the TF and DF mappers and reducers.
 
-3. **Run the Reducer**:
-   - Use the `reducer.py` script to generate the word index and unique IDs for the words in the dataset.
+## Vector Space Model Creation
 
-4. **Verify Output**:
-   - Check the output for word-to-ID mappings and the indexed vocabulary.
+After computing TF, DF, and IDF, the resulting arrays are converted into a **Vector Space Model (VSM)**. This is done using the code in the `vsm` folder.
 
-### Conclusion
+## Running on Hadoop
 
-This project demonstrates how to build a scalable search engine using Hadoop and Python. The use of MapReduce allows for efficient distributed processing of large datasets, while the preprocessing step ensures the data is clean and optimized for indexing. The result is a search engine capable of fast and accurate searching by leveraging a unique ID-based vocabulary.
+To run the MapReduce jobs on Hadoop, follow these steps:
 
-## Requirements
+1. **Install Hadoop and Python**:
+   Ensure that you have **Hadoop** and **Python 3.x** installed and properly configured on your system.
 
-- Python 3.x
-- Hadoop 2.x or later
-- Jupyter Notebook (for preprocessing)
+2. **Upload Input Data to HDFS**:
+   Upload your input data to the Hadoop Distributed File System (HDFS).
 
-## Running on Hadoop Cluster
+3. **Compile MapReduce Code**:
+   Compile your MapReduce code into a JAR file.
 
-To run the MapReduce job on a Hadoop cluster, follow these additional steps:
-1. **Package your scripts**: Ensure that `mapper.py` and `reducer.py` are available in the Hadoop environment.
-2. **Run the Hadoop job**:
+4. **Submit MapReduce Job**:
+   Use the Hadoop command line interface to submit your MapReduce job, specifying the input and output paths and the JAR file containing your code.
+
+   Example command to run the MapReduce job:
+
    ```bash
-   hadoop jar /path/to/hadoop-streaming.jar -input /path/to/input -output /path/to/output -mapper mapper.py -reducer reducer.py
+   hadoop jar /path/to/hadoop-streaming.jar \
+   -input /path/to/input \
+   -output /path/to/output \
+   -mapper mapper.py \
+   -reducer reducer.py
    ```
 
-Feel free to reach out for any issues or suggestions!
-```
+## Conclusion
 
-You can copy and paste this into a `README.md` file for your project! Let me know if you need further adjustments!
+This project demonstrates how to build a scalable search engine using Hadoop and Python. The map-reduce paradigm is used to efficiently process large datasets, while the preprocessing steps ensure the data is clean and ready for indexing. The result is a search engine capable of generating accurate reports and conducting efficient searches on large datasets.
+
